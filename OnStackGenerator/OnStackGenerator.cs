@@ -33,11 +33,13 @@ public class OnStackGenerator : IIncrementalGenerator
                     }
 
                     var fields = GetFields(a);
+                    var typeId = a.Identifier.Text;
 
-
-                    CreateClassAndStruct(sb, a.Identifier.Text);
+                    CreateClassAndStruct(sb, typeId);
 
                     CreateFields(sb, fields);
+
+                    CreateAllocateMethod(sb, typeId, fields);
 
                     CloseClassAndStruct(sb);
                 }
@@ -46,6 +48,30 @@ public class OnStackGenerator : IIncrementalGenerator
                 context.AddSource("OnStack.g.cs", sb.ToString());
             });
 
+    }
+
+    private static void CreateAllocateMethod(StringBuilder sb, string typeId, IEnumerable<FieldDeclarationSyntax> fields)
+    {
+        sb.Append("        public ");
+        sb.Append(typeId);
+        sb.AppendLine(" Allocate()");
+        sb.AppendLine("        {");
+        sb.Append("            return new ");
+        sb.Append(typeId);
+        sb.AppendLine("()");
+        sb.AppendLine("            {");
+        foreach (var field in fields)
+        {
+            var name = GetFieldName(field);
+
+            sb.Append("                ");
+            sb.Append(name);
+            sb.Append(" = this.");
+            sb.Append(name);
+            sb.AppendLine(",");
+        }
+        sb.AppendLine("            };");
+        sb.AppendLine("        }");
     }
 
     private static void CreateFields(StringBuilder sb, IEnumerable<FieldDeclarationSyntax> fields)
@@ -126,9 +152,10 @@ public class OnStackGenerator : IIncrementalGenerator
         sb.AppendLine("// Auto-generated code");
         sb.AppendLine();
         sb.Append("namespace ");
-        sb.AppendLine(@namespace);
+        sb.Append(@namespace);
         sb.Append(";");
         sb.AppendLine();
+        sb.AppendLine("#nullable enable");
     }
 
     private static void CreateClassAndStruct(StringBuilder sb, string typeId)
