@@ -15,7 +15,7 @@ partial class Program
 
     static void X(MyHeapObject.OnStack testClass)
     {
-        Console.WriteLine(testClass);
+        Console.WriteLine(testClass.Name);
     }
 
     static partial void HelloFrom(string name);
@@ -24,5 +24,5 @@ partial class Program
 [OnStack]
 public partial class MyHeapObject
 {
-
+    public string? Name;
 }

@@ -37,7 +37,7 @@ public class OnStackGenerator : IIncrementalGenerator
 
                     CreateClassAndStruct(sb, a.Identifier.Text);
 
-                    //CreateFields(sb, fields);
+                    CreateFields(sb, fields);
 
                     CloseClassAndStruct(sb);
                 }
@@ -48,14 +48,51 @@ public class OnStackGenerator : IIncrementalGenerator
 
     }
 
-    //private void CreateFields(StringBuilder sb, IEnumerable<FieldDeclarationSyntax> fields)
-    //{
-    //    foreach (var field in fields)
-    //    {
-    //        field.
-    //        sb.AppendLine("public ")
-    //    }
-    //}
+    private static void CreateFields(StringBuilder sb, IEnumerable<FieldDeclarationSyntax> fields)
+    {
+        foreach (var field in fields)
+        {
+            var type = GetFieldType(field);
+            var name = GetFieldName(field);
+
+            sb.Append("        public ");
+            sb.Append(type);
+            sb.Append(" ");
+            sb.Append(name);
+            sb.AppendLine(";");
+            sb.AppendLine();
+        }
+    }
+
+    private static string GetFieldType(FieldDeclarationSyntax field)
+    {
+        return field.DescendantNodes()
+            .OfType<VariableDeclarationSyntax>()
+            .Select(variable => variable
+                .DescendantNodes()
+                .OfType<PredefinedTypeSyntax>()
+                .Select(type => type
+                    .DescendantTokens()
+                    .Select(token => token.Text)
+                    .First()
+                )
+                .First()
+            )
+            .First();
+    }
+
+    private static string GetFieldName(FieldDeclarationSyntax field)
+    {
+        return field.DescendantNodes()
+            .OfType<VariableDeclarationSyntax>()
+            .Select(variable => variable
+                .DescendantNodes()
+                .OfType<VariableDeclaratorSyntax>()
+                .First()
+                .Identifier
+                .Text)
+            .First();
+    }
 
     private static IEnumerable<FieldDeclarationSyntax> GetFields(ClassDeclarationSyntax a)
     {
@@ -93,7 +130,7 @@ public class OnStackGenerator : IIncrementalGenerator
     private static void CreateClassAndStruct(StringBuilder sb, string typeId)
     {
         sb.Append("public partial class ").Append(typeId).AppendLine(" {");
-        sb.Append("    public struct OnStack {");
+        sb.AppendLine("    public struct OnStack {");
     }
 
     private static void CloseClassAndStruct(StringBuilder sb)
