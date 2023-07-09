@@ -56,7 +56,11 @@ public class OnStackGenerator : IIncrementalGenerator
             var name = GetFieldName(field);
 
             sb.Append("        public ");
-            sb.Append(type);
+            sb.Append(type.Type);
+            if (type.IsNullable)
+            {
+                sb.Append('?');
+            }
             sb.Append(" ");
             sb.Append(name);
             sb.AppendLine(";");
@@ -64,7 +68,7 @@ public class OnStackGenerator : IIncrementalGenerator
         }
     }
 
-    private static string GetFieldType(FieldDeclarationSyntax field)
+    private static (bool IsNullable, string Type) GetFieldType(FieldDeclarationSyntax field)
     {
         return field.DescendantNodes()
             .OfType<VariableDeclarationSyntax>()
@@ -73,7 +77,7 @@ public class OnStackGenerator : IIncrementalGenerator
                 .OfType<PredefinedTypeSyntax>()
                 .Select(type => type
                     .DescendantTokens()
-                    .Select(token => token.Text)
+                    .Select(token => (type.Parent is NullableTypeSyntax, token.Text))
                     .First()
                 )
                 .First()
@@ -129,8 +133,10 @@ public class OnStackGenerator : IIncrementalGenerator
 
     private static void CreateClassAndStruct(StringBuilder sb, string typeId)
     {
-        sb.Append("public partial class ").Append(typeId).AppendLine(" {");
-        sb.AppendLine("    public struct OnStack {");
+        sb.Append("public partial class ").AppendLine(typeId);
+        sb.AppendLine("{");
+        sb.AppendLine("    public struct OnStack");
+        sb.AppendLine("    {");
     }
 
     private static void CloseClassAndStruct(StringBuilder sb)
