@@ -29,13 +29,14 @@ public class OnStackGenerator : IIncrementalGenerator
                     var accessModifier = GetAccessModifier(classWithAttribute);
                     var fields = GetFields(classWithAttribute);
                     var typeId = classWithAttribute.Identifier.Text;
+                    var isNullableEnabled = IsNullableEnabled(classWithAttribute);
 
                     var onStackTypeInfo = new OnStackTypeInfo()
                     {
                         AccessModifier = accessModifier,
-                        Namespace = namespaceOfType, // TODO: pass the right namespace
+                        Namespace = namespaceOfType,
                         TypeName = typeId,
-                        IsNullableEnabled = true, // TODO: look in project if nullable is needed
+                        IsNullableEnabled = true,
                         Fields = GetFieldsInfo(fields),
                     };
 
@@ -46,6 +47,11 @@ public class OnStackGenerator : IIncrementalGenerator
                 }
             });
 
+    }
+
+    private static bool IsNullableEnabled(ClassDeclarationSyntax syntaxTree)
+    {
+        return true; // check if project and file and type as null enabled or not
     }
 
     private static string GetNamespace(SyntaxTree syntaxTree)
