@@ -9,6 +9,9 @@ namespace OnStackGenerator.General
             sb ??= new StringBuilder();
 
             sb.AppendLine("// Auto-generated code");
+            sb.AppendLine();
+            sb.AppendLine("using System.CodeDom.Compiler;");
+            sb.AppendLine();
             sb.Append("namespace ").Append(codeInfo.Namespace).AppendLine(";");
             sb.AppendLine();
             if (codeInfo.IsNullableEnabled)
@@ -28,6 +31,8 @@ namespace OnStackGenerator.General
 
         private static void AddAllocateMethod(StringBuilder sb, OnStackTypeInfo codeInfo)
         {
+            sb.AppendLine();
+            sb.AppendLine("        [GeneratedCode(\"OnStack\", \"Alpha_0\")]");
             sb.Append("        public ");
             sb.Append(codeInfo.TypeName);
             sb.AppendLine(" Allocate()");
@@ -83,10 +88,11 @@ namespace OnStackGenerator.General
         private static void OpenStruct(StringBuilder sb)
         {
             sb.Append("""
+                    [GeneratedCode("OnStack", "Alpha_0")]
                     public struct OnStack
                     {
                
-                 """);
+                """);
         }
 
         private static void OpenClass(StringBuilder sb, OnStackTypeInfo codeInfo)

@@ -36,7 +36,7 @@ public class OnStackGenerator : IIncrementalGenerator
                         AccessModifier = accessModifier,
                         Namespace = namespaceOfType,
                         TypeName = typeId,
-                        IsNullableEnabled = true,
+                        IsNullableEnabled = isNullableEnabled,
                         Fields = GetFieldsInfo(fields),
                     };
 
