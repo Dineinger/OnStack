@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using OnStackGenerator.General;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,31 +24,61 @@ public class OnStackGenerator : IIncrementalGenerator
                 var classesWithAttribute = GetClassesWithAttribute(compilation);
 
                 StringBuilder sb = new StringBuilder();
-                CreateHeader(sb, "OnStackTests");
+                sb.AppendLine("/*");
+                //CreateHeader(sb, "OnStackTests");
 
                 foreach (var a in classesWithAttribute)
                 {
-                    if (a is null)
-                    {
-                        continue;
-                    }
-
                     var fields = GetFields(a);
                     var typeId = a.Identifier.Text;
 
-                    CreateClassAndStruct(sb, typeId);
+                    var onStackTypeInfo = new OnStackTypeInfo()
+                    {
+                        AccessModifier = TypeAccessModifier.Public, // TODO: pass the right access modifier
+                        Namespace = "OnStackTests", // TODO: pass the right namespace
+                        TypeName = typeId,
+                        IsNullableEnabled = true, // TODO: look in project if nullable is needed
+                        Fields = GetFieldsInfo(fields),
+                    };
 
-                    CreateFields(sb, fields);
+                    var fileText = OnStackStructCreator.CreateClassForFile(onStackTypeInfo)
+                        .ToString();
 
-                    CreateAllocateMethod(sb, typeId, fields);
+                    sb.AppendLine(typeId);
 
-                    CloseClassAndStruct(sb);
+                    context.AddSource($"{onStackTypeInfo.TypeName}.g.cs", fileText);
+
+                    //CreateClassAndStruct(sb, typeId);
+
+                    //CreateFields(sb, fields);
+
+                    //CreateAllocateMethod(sb, typeId, fields);
+
+                    //CloseClassAndStruct(sb);
                 }
 
-
+                sb.Append("*/");
                 context.AddSource("OnStack.g.cs", sb.ToString());
             });
 
+    }
+
+    private static Field[] GetFieldsInfo(FieldDeclarationSyntax[] fields)
+    {
+        var result = new Field[fields.Length];
+        for (int a = 0; a < fields.Length; a++)
+        {
+            var rawField = fields[a];
+            var field = new Field();
+            var fieldType = GetFieldType(rawField);
+            field.Name = GetFieldName(rawField);
+            field.AccessModifier = FieldAccessModifier.Public; // TODO: get the correct access modifier
+            field.IsNullable = fieldType.IsNullable;
+            field.Type = fieldType.Type;
+            result[a] = field;
+        }
+
+        return result;
     }
 
     private static void CreateAllocateMethod(StringBuilder sb, string typeId, IEnumerable<FieldDeclarationSyntax> fields)
@@ -124,13 +155,13 @@ public class OnStackGenerator : IIncrementalGenerator
             .First();
     }
 
-    private static IEnumerable<FieldDeclarationSyntax> GetFields(ClassDeclarationSyntax a)
+    private static FieldDeclarationSyntax[] GetFields(ClassDeclarationSyntax a)
     {
         return a.DescendantNodes()
             .OfType<FieldDeclarationSyntax>()
             .Where(field => field
                 .DescendantTokens()
-                .Any(token => token.IsKind(SyntaxKind.PublicKeyword)));
+                .Any(token => token.IsKind(SyntaxKind.PublicKeyword))).ToArray();
     }
 
     private static IEnumerable<ClassDeclarationSyntax> GetClassesWithAttribute(Compilation compilation)
