@@ -1,10 +1,17 @@
-﻿using OnStackShared;
+﻿using BenchmarkDotNet.Running;
+using OnStackShared;
+using OnStackTests.Benchmarks;
 
 namespace OnStackTests;
 
 class Program
 {
     static void Main(string[] args)
+    {
+        BenchmarkRunner.Run<OnStackDefaultBenchmarks>();
+    }
+
+    static void APITests()
     {
         MyHeapObject.OnStack x = new MyHeapObject.OnStack();
         x.Name = "Test";
@@ -19,9 +26,3 @@ class Program
     }
 }
 
-[OnStack]
-public partial class MyHeapObject
-{
-    public int Age;
-    public string? Name;
-}
