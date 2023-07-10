@@ -23,15 +23,17 @@ public class OnStackGenerator : IIncrementalGenerator
             {
                 var classesWithAttribute = GetClassesWithAttribute(compilation);
 
-                foreach (var a in classesWithAttribute)
+                foreach (var classWithAttribute in classesWithAttribute)
                 {
-                    var fields = GetFields(a);
-                    var typeId = a.Identifier.Text;
+                    var namespaceOfType = GetNamespace(classWithAttribute.SyntaxTree);
+                    var accessModifier = GetAccessModifier(classWithAttribute);
+                    var fields = GetFields(classWithAttribute);
+                    var typeId = classWithAttribute.Identifier.Text;
 
                     var onStackTypeInfo = new OnStackTypeInfo()
                     {
-                        AccessModifier = TypeAccessModifier.Public, // TODO: pass the right access modifier
-                        Namespace = "OnStackTests", // TODO: pass the right namespace
+                        AccessModifier = accessModifier,
+                        Namespace = namespaceOfType, // TODO: pass the right namespace
                         TypeName = typeId,
                         IsNullableEnabled = true, // TODO: look in project if nullable is needed
                         Fields = GetFieldsInfo(fields),
@@ -44,6 +46,42 @@ public class OnStackGenerator : IIncrementalGenerator
                 }
             });
 
+    }
+
+    private static string GetNamespace(SyntaxTree syntaxTree)
+    {
+        return syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<FileScopedNamespaceDeclarationSyntax>()
+            .Select(ns => ns.Name.ToString())
+            .FirstOrDefault()
+        ?? syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<NamespaceDeclarationSyntax>()
+            .Select(ns => ns.Name.ToString())
+            .First();
+    }
+
+    private static TypeAccessModifier GetAccessModifier(ClassDeclarationSyntax classesWithAttribute)
+    {
+        foreach (var token in classesWithAttribute.DescendantTokens())
+        {
+            if (token.IsKind(SyntaxKind.PublicKeyword))
+            {
+                return TypeAccessModifier.Public;
+            }
+            else if (token.IsKind(SyntaxKind.InternalKeyword))
+            {
+                return TypeAccessModifier.Internal;
+            }
+            else continue;
+        }
+
+        return TypeAccessModifier.Internal;
+        /*
+        class X { }
+        is seen as internal by the compiler
+        */
     }
 
     private static Field[] GetFieldsInfo(FieldDeclarationSyntax[] fields)

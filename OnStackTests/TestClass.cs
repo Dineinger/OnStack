@@ -1,6 +1,6 @@
 ﻿using OnStackShared;
 
-namespace OnStackTests;
+namespace OnStackTests.SecondNamespace;
 
 [OnStack]
 public partial class TestClass
